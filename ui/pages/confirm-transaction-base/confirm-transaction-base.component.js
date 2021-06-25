@@ -144,6 +144,9 @@ export default class ConfirmTransactionBase extends Component {
     hardwareWalletRequiresConnection: PropTypes.bool,
     isMultiLayerFeeNetwork: PropTypes.bool,
     eip1559V2Enabled: PropTypes.bool,
+    isFailedTransaction: PropTypes.bool,
+    removeTransactionToDisplayOnFailure: PropTypes.func,
+    addTransactionToDisplayOnFailure: PropTypes.func,
   };
 
   state = {
@@ -780,6 +783,18 @@ export default class ConfirmTransactionBase extends Component {
     });
   }
 
+  handleFailedTxClose() {
+    const {
+      mostRecentOverviewPage,
+      txData,
+      removeTransactionToDisplayOnFailure,
+      history,
+    } = this.props;
+
+    removeTransactionToDisplayOnFailure(txData.id);
+    history.push(mostRecentOverviewPage);
+  }
+
   handleSubmit() {
     const {
       sendTransaction,
@@ -791,6 +806,7 @@ export default class ConfirmTransactionBase extends Component {
       maxFeePerGas,
       maxPriorityFeePerGas,
       baseFeePerGas,
+      addTransactionToDisplayOnFailure,
     } = this.props;
     const { submitting } = this.state;
 
@@ -824,6 +840,7 @@ export default class ConfirmTransactionBase extends Component {
       () => {
         this._removeBeforeUnload();
 
+        addTransactionToDisplayOnFailure(txData.id);
         sendTransaction(txData)
           .then(() => {
             clearConfirmTransaction();
@@ -1002,7 +1019,11 @@ export default class ConfirmTransactionBase extends Component {
       gasFeeIsCustom,
       nativeCurrency,
       hardwareWalletRequiresConnection,
+<<<<<<< HEAD
       image,
+=======
+      isFailedTransaction,
+>>>>>>> 9c5150e7a (Allow users to see confirm screen errors.)
     } = this.props;
     const {
       submitting,
@@ -1056,7 +1077,7 @@ export default class ConfirmTransactionBase extends Component {
           toAddress={toAddress}
           toEns={toEns}
           toNickname={toNickname}
-          showEdit={Boolean(onEdit)}
+          showEdit={Boolean(onEdit) && !isFailedTransaction}
           action={functionType}
           title={title}
           image={image}
@@ -1095,7 +1116,11 @@ export default class ConfirmTransactionBase extends Component {
           onEdit={() => this.handleEdit()}
           onCancelAll={() => this.handleCancelAll()}
           onCancel={() => this.handleCancel()}
-          onSubmit={() => this.handleSubmit()}
+          onSubmit={() =>
+            isFailedTransaction
+              ? this.handleFailedTxClose()
+              : this.handleSubmit()
+          }
           setUserAcknowledgedGasMissing={this.setUserAcknowledgedGasMissing}
           hideSenderToRecipient={hideSenderToRecipient}
           origin={txData.origin}
@@ -1104,6 +1129,7 @@ export default class ConfirmTransactionBase extends Component {
           handleCloseEditGas={() => this.handleCloseEditGas()}
           currentTransaction={txData}
           supportsEIP1559V2={this.supportsEIP1559V2}
+          isFailedTransaction={isFailedTransaction}
         />
       </TransactionModalContextProvider>
     );
