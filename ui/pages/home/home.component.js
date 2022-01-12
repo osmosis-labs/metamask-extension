@@ -123,6 +123,7 @@ export default class Home extends PureComponent {
     canShowBlockageNotification: true,
     notificationClosing: false,
     redirecting: false,
+    activeTabName: 'Assets',
   };
 
   constructor(props) {
@@ -201,9 +202,13 @@ export default class Home extends PureComponent {
       threeBoxLastUpdated,
       threeBoxSynced,
       isNotification,
+      defaultHomeActiveTabName,
     } = this.props;
     const { notificationClosing } = this.state;
 
+    if (defaultHomeActiveTabName !== prevState.activeTabName) {
+      this.setState({ activeTabName: defaultHomeActiveTabName });
+    }
     if (notificationClosing && !prevState.notificationClosing) {
       closeNotificationPopup();
     } else if (isNotification) {
@@ -438,7 +443,6 @@ export default class Home extends PureComponent {
   render() {
     const { t } = this.context;
     const {
-      defaultHomeActiveTabName,
       onTabClick,
       forgottenPassword,
       history,
@@ -451,9 +455,11 @@ export default class Home extends PureComponent {
       showRecoveryPhraseReminder,
     } = this.props;
 
+    const { activeTabName, notificationClosing, redirecting } = this.state;
+
     if (forgottenPassword) {
       return <Redirect to={{ pathname: RESTORE_VAULT_ROUTE }} />;
-    } else if (this.state.notificationClosing || this.state.redirecting) {
+    } else if (notificationClosing || redirecting) {
       return null;
     }
 
@@ -484,7 +490,7 @@ export default class Home extends PureComponent {
               <EthOverview />
             </div>
             <Tabs
-              defaultActiveTabName={defaultHomeActiveTabName}
+              defaultActiveTabName={activeTabName}
               onTabClick={onTabClick}
               tabsClassName="home__tabs"
             >

@@ -595,6 +595,9 @@
   "contractInteraction": {
     "message": "Contract Interaction"
   },
+  "convertTokenToNFTDescription": {
+    "message": "We've detected that this asset is an NFT. Metamask now has full native support for NFTs. Would you like to remove it from your token list and add it as an NFT?"
+  },
   "copiedExclamation": {
     "message": "Copied!"
   },
@@ -1454,6 +1457,9 @@
   },
   "invalidAddressRecipientNotEthNetwork": {
     "message": "Not ETH network, set to lowercase"
+  },
+  "invalidAssetType": {
+    "message": "This asset is an NFT and needs to be re-added on the Import NFTs page found under the NFTs tab"
   },
   "invalidBlockExplorerURL": {
     "message": "Invalid Block Explorer URL"

@@ -53,12 +53,12 @@ import {
   hideLoadingIndication,
   showConfTxPage,
   showLoadingIndication,
-  updateTokenType,
   updateTransaction,
   addPollingTokenToAppState,
   removePollingTokenFromAppState,
   isCollectibleOwner,
   getTokenStandardAndDetails,
+  showModal,
 } from '../../store/actions';
 import { setCustomGasLimit } from '../gas/gas.duck';
 import {
@@ -101,6 +101,7 @@ import {
 } from '../../helpers/constants/common';
 import { TRANSACTION_ENVELOPE_TYPES } from '../../../shared/constants/transaction';
 import { readAddressAsContract } from '../../../shared/modules/contract-utils';
+import { INVALID_ASSET_TYPE } from '../../helpers/constants/error-keys';
 // typedefs
 /**
  * @typedef {import('@reduxjs/toolkit').PayloadAction} PayloadAction
@@ -1158,13 +1159,7 @@ const slice = createSlice({
     },
     validateSendState: (state) => {
       switch (true) {
-        case state.asset.type === ASSET_TYPES.TOKEN &&
-          (state.asset.details.isERC721 === true ||
-            state.asset.details.standard === ERC721 ||
-            state.asset.details.standard === ERC1155):
-          state.status = SEND_STATUSES.INVALID;
-          break;
-        // 1 + 2. State is invalid when either gas or amount fields have errors
+        // 1 + 2. State is invalid when either gas or amount or asset fields have errors
         // 3. State is invalid if asset type is a token and the token details
         //  are unknown.
         // 4. State is invalid if no recipient has been added
@@ -1174,6 +1169,7 @@ const slice = createSlice({
         // 8. State is invalid if the selected asset is a ERC721
         case Boolean(state.amount.error):
         case Boolean(state.gas.error):
+        case Boolean(state.asset.error):
         case state.asset.type === ASSET_TYPES.TOKEN &&
           state.asset.details === null:
         case state.stage === SEND_STAGES.ADD_RECIPIENT:
@@ -1434,7 +1430,7 @@ export function updateSendAsset({ type, details }) {
   return async (dispatch, getState) => {
     const state = getState();
     let { balance, error } = state.send.asset;
-    let userAddress = state.send.account.address ?? getSelectedAddress(state);
+    const userAddress = state.send.account.address ?? getSelectedAddress(state);
     if (type === ASSET_TYPES.TOKEN) {
       if (details) {
         if (details.standard === undefined) {
@@ -1442,11 +1438,10 @@ export function updateSendAsset({ type, details }) {
             details.address,
             userAddress,
           );
-
-          //TODO
           if (standard === ERC721 || standard === ERC1155) {
-            // eject from the send flow and pop a modal telling the user to go to the NFT tab
-            error = 'TEST ERROR';
+            dispatch(showModal({ name: 'CONVERT_TOKEN_TO_NFT' }));
+            error = INVALID_ASSET_TYPE;
+            throw new Error(error);
           }
 
           details.standard = standard;
@@ -1459,6 +1454,7 @@ export function updateSendAsset({ type, details }) {
         // check to take a decent amount of time, so we display a loading
         // indication so that that immediate feedback is displayed to the user.
         if (details.standard === ERC20) {
+          error = null;
           await dispatch(showLoadingIndication());
           balance = await getERC20Balance(details, userAddress);
         }
@@ -1472,16 +1468,17 @@ export function updateSendAsset({ type, details }) {
           details.address,
           details.tokenId,
         );
-      } catch (error) {
-        if (error.message.includes('Unable to verify ownership.')) {
+      } catch (err) {
+        if (err.message.includes('Unable to verify ownership.')) {
           // this would indicate that either our attempts to verify ownership failed because of network issues,
           // or, somehow a token has been added to collectibles state with an incorrect chainId.
         } else {
           // Any other error is unexpected and should be surfaced.
-          dispatch(displayWarning(error.message));
+          dispatch(displayWarning(err.message));
         }
       }
       if (isCurrentOwner) {
+        error = null;
         balance = '0x1';
       } else {
         throw new Error(
@@ -1489,6 +1486,7 @@ export function updateSendAsset({ type, details }) {
         );
       }
     } else {
+      error = null;
       // if changing to native currency, get it from the account key in send
       // state which is kept in sync when accounts change.
       balance = state.send.account.balance;

@@ -23,6 +23,18 @@ export default class Tabs extends Component {
     ),
   };
 
+  componentDidUpdate(_prevProps) {
+    const { defaultActiveTabName } = this.props;
+    if (defaultActiveTabName !== _prevProps.defaultActiveTabName) {
+      this.setState({
+        activeTabIndex: Math.max(
+          this._findChildByName(defaultActiveTabName),
+          0,
+        ),
+      });
+    }
+  }
+
   handleTabClick(tabIndex, tabName) {
     const { onTabClick } = this.props;
     const { activeTabIndex } = this.state;

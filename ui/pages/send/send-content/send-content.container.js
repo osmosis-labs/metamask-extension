@@ -13,6 +13,7 @@ import {
   getAssetError,
 } from '../../../ducks/send';
 
+import { showModal } from '../../../store/actions';
 import SendContent from './send-content.component';
 
 function mapStateToProps(state) {
@@ -37,4 +38,10 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps)(SendContent);
+const mapDispatchToProps = (dispatch) => {
+  return {
+    showModal: (modal) => dispatch(showModal(modal)),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(SendContent);

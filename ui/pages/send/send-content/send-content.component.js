@@ -37,6 +37,7 @@ export default class SendContent extends Component {
     getIsBalanceInsufficient: PropTypes.bool,
     asset: PropTypes.object,
     to: PropTypes.string,
+    assetError: PropTypes.string,
   };
 
   render() {
@@ -123,11 +124,11 @@ export default class SendContent extends Component {
     );
   }
 
-  renderError(error, params) {
+  renderError(error) {
     const { t } = this.context;
     return (
       <Dialog type="error" className="send__error-dialog">
-        {t(error, [...params])}
+        {t(error)}
       </Dialog>
     );
   }
