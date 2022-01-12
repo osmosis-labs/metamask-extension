@@ -58,6 +58,7 @@ import {
   addPollingTokenToAppState,
   removePollingTokenFromAppState,
   isCollectibleOwner,
+  getTokenStandardAndDetails,
 } from '../../store/actions';
 import { setCustomGasLimit } from '../gas/gas.duck';
 import {
@@ -91,7 +92,13 @@ import {
   isValidHexAddress,
 } from '../../../shared/modules/hexstring-utils';
 import { CHAIN_ID_TO_GAS_LIMIT_BUFFER_MAP } from '../../../shared/constants/network';
-import { ERC20, ETH, GWEI } from '../../helpers/constants/common';
+import {
+  ERC20,
+  ERC721,
+  ERC1155,
+  ETH,
+  GWEI,
+} from '../../helpers/constants/common';
 import { TRANSACTION_ENVELOPE_TYPES } from '../../../shared/constants/transaction';
 import { readAddressAsContract } from '../../../shared/modules/contract-utils';
 // typedefs
@@ -1146,6 +1153,12 @@ const slice = createSlice({
     },
     validateSendState: (state) => {
       switch (true) {
+        case state.asset.type === ASSET_TYPES.TOKEN &&
+        (state.asset.details.isERC721 === true ||
+          state.asset.details.standard === ERC721 ||
+          state.asset.details.standard === ERC1155):
+        state.status = SEND_STATUSES.INVALID;
+        break;
         // 1 + 2. State is invalid when either gas or amount fields have errors
         // 3. State is invalid if asset type is a token and the token details
         //  are unknown.
@@ -1164,10 +1177,6 @@ const slice = createSlice({
         case new BigNumber(state.gas.gasLimit, 16).lessThan(
           new BigNumber(state.gas.minimumGasLimit),
         ):
-          state.status = SEND_STATUSES.INVALID;
-          break;
-        case state.asset.type === ASSET_TYPES.TOKEN &&
-          state.asset.details.isERC721 === true:
           state.status = SEND_STATUSES.INVALID;
           break;
         default:
@@ -1420,7 +1429,24 @@ export function updateSendAsset({ type, details }) {
   return async (dispatch, getState) => {
     const state = getState();
     let { balance } = state.send.asset;
+    let userAddress = state.send.account.address ?? getSelectedAddress(state);
     if (type === ASSET_TYPES.TOKEN) {
+      // TODO remove along with migration of isERC721 tokens and stripping away this designation
+      if (details) {
+        // if (details.isERC721 === undefined) {
+        //   const updatedAssetDetails = await updateTokenType(details.address);
+        //   details.isERC721 = updatedAssetDetails.isERC721;
+        // }
+        if (details.standard === undefined) {
+          const { standard } = await getTokenStandardAndDetails(
+            details.address,
+            userAddress,
+          );
+
+          details.standard = standard;
+        }
+      }
+
       // if changing to a token, get the balance from the network. The asset
       // overview page and asset list on the wallet overview page contain
       // send buttons that call this method before initialization occurs.
@@ -1428,20 +1454,9 @@ export function updateSendAsset({ type, details }) {
       // the currently active account. In addition its possible for the balance
       // check to take a decent amount of time, so we display a loading
       // indication so that that immediate feedback is displayed to the user.
-      await dispatch(showLoadingIndication());
-      balance = await getERC20Balance(
-        details,
-        state.send.account.address ?? getSelectedAddress(state),
-      );
-      // TODO remove along with migration of isERC721 tokens and stripping away this designation
-      if (details) {
-        if (details.isERC721 === undefined) {
-          const updatedAssetDetails = await updateTokenType(details.address);
-          details.isERC721 = updatedAssetDetails.isERC721;
-        }
-        if (details.standard === undefined) {
-          details.standard = ERC20;
-        }
+      if (details.standard === ERC20) {
+        await dispatch(showLoadingIndication());
+        balance = await getERC20Balance(details, userAddress);
       }
       await dispatch(hideLoadingIndication());
     } else if (type === ASSET_TYPES.COLLECTIBLE) {
