@@ -49,6 +49,7 @@ export default class SendContent extends Component {
       networkOrAccountNotSupports1559,
       getIsBalanceInsufficient,
       asset,
+      assetError,
     } = this.props;
 
     let gasError;
@@ -67,6 +68,7 @@ export default class SendContent extends Component {
     return (
       <PageContainerContent>
         <div className="send-v2__form">
+          {assetError ? this.renderError(assetError) : null}
           {gasError ? this.renderError(gasError) : null}
           {isEthGasPrice
             ? this.renderWarning(ETH_GAS_PRICE_FETCH_WARNING_KEY)
@@ -121,11 +123,11 @@ export default class SendContent extends Component {
     );
   }
 
-  renderError(error) {
+  renderError(error, params) {
     const { t } = this.context;
     return (
       <Dialog type="error" className="send__error-dialog">
-        {t(error)}
+        {t(error, [...params])}
       </Dialog>
     );
   }

@@ -614,6 +614,9 @@ export const initialState = {
     // In the case of tokens, the address, decimals and symbol of the token
     // will be included in details
     details: null,
+
+    // TODO testing
+    error: null,
   },
   draftTransaction: {
     // The metamask internal id of the transaction. Only populated in the EDIT
@@ -743,6 +746,7 @@ const slice = createSlice({
       state.amount.value = action.payload.amount;
       state.gas.error = null;
       state.amount.error = null;
+      state.asset.error = null;
       state.recipient.address = action.payload.address;
       state.recipient.nickname = action.payload.nickname;
       state.draftTransaction.id = action.payload.id;
@@ -894,6 +898,7 @@ const slice = createSlice({
     updateAsset: (state, action) => {
       state.asset.type = action.payload.type;
       state.asset.balance = action.payload.balance;
+      state.asset.error = action.payload.error;
       if (
         state.asset.type === ASSET_TYPES.TOKEN ||
         state.asset.type === ASSET_TYPES.COLLECTIBLE
@@ -1154,11 +1159,11 @@ const slice = createSlice({
     validateSendState: (state) => {
       switch (true) {
         case state.asset.type === ASSET_TYPES.TOKEN &&
-        (state.asset.details.isERC721 === true ||
-          state.asset.details.standard === ERC721 ||
-          state.asset.details.standard === ERC1155):
-        state.status = SEND_STATUSES.INVALID;
-        break;
+          (state.asset.details.isERC721 === true ||
+            state.asset.details.standard === ERC721 ||
+            state.asset.details.standard === ERC1155):
+          state.status = SEND_STATUSES.INVALID;
+          break;
         // 1 + 2. State is invalid when either gas or amount fields have errors
         // 3. State is invalid if asset type is a token and the token details
         //  are unknown.
@@ -1428,37 +1433,37 @@ export function updateSendAmount(amount) {
 export function updateSendAsset({ type, details }) {
   return async (dispatch, getState) => {
     const state = getState();
-    let { balance } = state.send.asset;
+    let { balance, error } = state.send.asset;
     let userAddress = state.send.account.address ?? getSelectedAddress(state);
     if (type === ASSET_TYPES.TOKEN) {
-      // TODO remove along with migration of isERC721 tokens and stripping away this designation
       if (details) {
-        // if (details.isERC721 === undefined) {
-        //   const updatedAssetDetails = await updateTokenType(details.address);
-        //   details.isERC721 = updatedAssetDetails.isERC721;
-        // }
         if (details.standard === undefined) {
           const { standard } = await getTokenStandardAndDetails(
             details.address,
             userAddress,
           );
 
+          //TODO
+          if (standard === ERC721 || standard === ERC1155) {
+            // eject from the send flow and pop a modal telling the user to go to the NFT tab
+            error = 'TEST ERROR';
+          }
+
           details.standard = standard;
         }
+        // if changing to a token, get the balance from the network. The asset
+        // overview page and asset list on the wallet overview page contain
+        // send buttons that call this method before initialization occurs.
+        // When this happens we don't yet have an account.address so default to
+        // the currently active account. In addition its possible for the balance
+        // check to take a decent amount of time, so we display a loading
+        // indication so that that immediate feedback is displayed to the user.
+        if (details.standard === ERC20) {
+          await dispatch(showLoadingIndication());
+          balance = await getERC20Balance(details, userAddress);
+        }
+        await dispatch(hideLoadingIndication());
       }
-
-      // if changing to a token, get the balance from the network. The asset
-      // overview page and asset list on the wallet overview page contain
-      // send buttons that call this method before initialization occurs.
-      // When this happens we don't yet have an account.address so default to
-      // the currently active account. In addition its possible for the balance
-      // check to take a decent amount of time, so we display a loading
-      // indication so that that immediate feedback is displayed to the user.
-      if (details.standard === ERC20) {
-        await dispatch(showLoadingIndication());
-        balance = await getERC20Balance(details, userAddress);
-      }
-      await dispatch(hideLoadingIndication());
     } else if (type === ASSET_TYPES.COLLECTIBLE) {
       let isCurrentOwner = true;
       try {
@@ -1489,7 +1494,7 @@ export function updateSendAsset({ type, details }) {
       balance = state.send.account.balance;
     }
     // update the asset in state which will re-run amount and gas validation
-    await dispatch(actions.updateAsset({ type, details, balance }));
+    await dispatch(actions.updateAsset({ type, details, balance, error }));
     await dispatch(computeEstimatedGasLimit());
   };
 }
@@ -1885,7 +1890,6 @@ export function getGasInputMode(state) {
 }
 
 // Asset Selectors
-
 export function getSendAsset(state) {
   return state[name].asset;
 }
@@ -1899,6 +1903,10 @@ export function getIsAssetSendable(state) {
     return true;
   }
   return state[name].asset.details.isERC721 === false;
+}
+
+export function getAssetError(state) {
+  return state[name].asset.error;
 }
 
 // Amount Selectors
