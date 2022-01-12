@@ -1019,11 +1019,8 @@ export default class ConfirmTransactionBase extends Component {
       gasFeeIsCustom,
       nativeCurrency,
       hardwareWalletRequiresConnection,
-<<<<<<< HEAD
       image,
-=======
       isFailedTransaction,
->>>>>>> 9c5150e7a (Allow users to see confirm screen errors.)
     } = this.props;
     const {
       submitting,
