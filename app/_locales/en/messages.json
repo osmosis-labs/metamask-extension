@@ -1765,9 +1765,6 @@
   "moreDetails": {
     "message": "More details"
   },
-  "multiplier": {
-    "message": "multiplier"
-  },
   "mustSelectOne": {
     "message": "Must select at least 1 token."
   },
