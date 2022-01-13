@@ -1913,7 +1913,7 @@
     "description": "The next nonce according to MetaMask's internal logic"
   },
   "nftTokenIdPlaceholder": {
-    "message": "Enter the collectible ID"
+    "message": "Enter the Token ID"
   },
   "nfts": {
     "message": "NFTs"

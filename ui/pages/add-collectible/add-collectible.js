@@ -12,6 +12,7 @@ import {
   addCollectibleVerifyOwnership,
   setNewCollectibleAddedMessage,
 } from '../../store/actions';
+import FormField from '../../components/ui/form-field';
 
 export default function AddCollectible() {
   const t = useI18nContext();
@@ -62,28 +63,26 @@ export default function AddCollectible() {
       contentComponent={
         <Box padding={4}>
           <Box>
-            <TextField
+            <FormField
               id="address"
-              label={t('address')}
+              titleText={t('address')}
               placeholder="0x..."
-              type="text"
               value={address}
-              onChange={(e) => validateAndSetAddress(e.target.value)}
-              fullWidth
+              onChange={(val) => validateAndSetAddress(val)}
               autoFocus
-              margin="normal"
             />
           </Box>
           <Box>
-            <TextField
+            <FormField
               id="token-id"
-              label={t('id')}
+              titleText={t('tokenId')}
               placeholder={t('nftTokenIdPlaceholder')}
-              type="number"
               value={tokenId}
-              onChange={(e) => validateAndSetTokenId(e.target.value)}
-              fullWidth
-              margin="normal"
+              onChange={(val) => {
+                validateAndSetTokenId(val);
+              }}
+              tooltipText="Each NFT has a Token ID which corresponds with a specific asset in its contract"
+              numeric
             />
           </Box>
         </Box>
