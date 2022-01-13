@@ -616,7 +616,6 @@ export const initialState = {
     // will be included in details
     details: null,
 
-    // TODO testing
     error: null,
   },
   draftTransaction: {
@@ -1432,6 +1431,7 @@ export function updateSendAsset({ type, details }) {
     let { balance, error } = state.send.asset;
     const userAddress = state.send.account.address ?? getSelectedAddress(state);
     if (type === ASSET_TYPES.TOKEN) {
+      await dispatch(showLoadingIndication());
       if (details) {
         if (details.standard === undefined) {
           const { standard } = await getTokenStandardAndDetails(
@@ -1443,9 +1443,9 @@ export function updateSendAsset({ type, details }) {
             error = INVALID_ASSET_TYPE;
             throw new Error(error);
           }
-
           details.standard = standard;
         }
+
         // if changing to a token, get the balance from the network. The asset
         // overview page and asset list on the wallet overview page contain
         // send buttons that call this method before initialization occurs.
@@ -1455,7 +1455,6 @@ export function updateSendAsset({ type, details }) {
         // indication so that that immediate feedback is displayed to the user.
         if (details.standard === ERC20) {
           error = null;
-          await dispatch(showLoadingIndication());
           balance = await getERC20Balance(details, userAddress);
         }
         await dispatch(hideLoadingIndication());

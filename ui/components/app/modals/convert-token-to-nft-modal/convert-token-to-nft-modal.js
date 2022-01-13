@@ -41,15 +41,6 @@ const ConvertTokenToNFT = ({ hideModal }) => {
         >
           <Typography variant={TYPOGRAPHY.H6} fontWeight={FONT_WEIGHT.NORMAL}>
             {t('convertTokenToNFTDescription')}
-            {/* <Button
-              type="link"
-              className="convert-token-to-nft__link"
-              rel="noopener noreferrer"
-              target="_blank"
-              href="https://metamask.zendesk.com/hc/en-us/articles/360015489251"
-            >
-              {t('learnMore')}
-            </Button> */}
           </Typography>
         </Box>
       </div>
