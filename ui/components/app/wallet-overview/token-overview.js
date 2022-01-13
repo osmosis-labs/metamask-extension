@@ -63,9 +63,14 @@ const TokenOverview = ({ className, token }) => {
 
   useEffect(() => {
     if (token.isERC721) {
-      dispatch(showModal({ name: 'CONVERT_TOKEN_TO_NFT' }));
+      dispatch(
+        showModal({
+          name: 'CONVERT_TOKEN_TO_NFT',
+          tokenAddress: token.address,
+        }),
+      );
     }
-  }, [token.isERC721, dispatch]);
+  }, [token.isERC721, token.address, dispatch]);
 
   return (
     <WalletOverview

@@ -1431,15 +1431,21 @@ export function updateSendAsset({ type, details }) {
     let { balance, error } = state.send.asset;
     const userAddress = state.send.account.address ?? getSelectedAddress(state);
     if (type === ASSET_TYPES.TOKEN) {
-      await dispatch(showLoadingIndication());
       if (details) {
         if (details.standard === undefined) {
+          await dispatch(showLoadingIndication());
           const { standard } = await getTokenStandardAndDetails(
             details.address,
             userAddress,
           );
           if (standard === ERC721 || standard === ERC1155) {
-            dispatch(showModal({ name: 'CONVERT_TOKEN_TO_NFT' }));
+            await dispatch(hideLoadingIndication());
+            dispatch(
+              showModal({
+                name: 'CONVERT_TOKEN_TO_NFT',
+                tokenAddress: details.address,
+              }),
+            );
             error = INVALID_ASSET_TYPE;
             throw new Error(error);
           }

@@ -58,4 +58,5 @@ NumericInput.propTypes = {
   autoFocus: PropTypes.bool,
   allowDecimals: PropTypes.bool,
   disabled: PropTypes.bool,
+  placeholder: PropTypes.string,
 };

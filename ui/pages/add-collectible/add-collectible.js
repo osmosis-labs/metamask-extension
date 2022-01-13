@@ -1,25 +1,37 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { util } from '@metamask/controllers';
 import { useI18nContext } from '../../hooks/useI18nContext';
 import { DEFAULT_ROUTE } from '../../helpers/constants/routes';
 
 import Box from '../../components/ui/box';
-import TextField from '../../components/ui/text-field';
 import PageContainer from '../../components/ui/page-container';
 import {
   addCollectibleVerifyOwnership,
+  removeToken,
   setNewCollectibleAddedMessage,
 } from '../../store/actions';
 import FormField from '../../components/ui/form-field';
+import { getIsMainnet, getUseCollectibleDetection } from '../../selectors';
+import { getCollectiblesDetectionNoticeDismissed } from '../../ducks/metamask/metamask';
+import CollectiblesDetectionNotice from '../../components/app/collectibles-detection-notice';
 
 export default function AddCollectible() {
   const t = useI18nContext();
   const history = useHistory();
+  const contractAddressToConvertFromTokenToCollectible =
+    history?.location?.state?.tokenAddress;
   const dispatch = useDispatch();
+  const useCollectibleDetection = useSelector(getUseCollectibleDetection);
+  const isMainnet = useSelector(getIsMainnet);
+  const collectibleDetectionNoticeDismissed = useSelector(
+    getCollectiblesDetectionNoticeDismissed,
+  );
 
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState(
+    contractAddressToConvertFromTokenToCollectible ?? '',
+  );
   const [tokenId, setTokenId] = useState('');
   const [disabled, setDisabled] = useState(true);
 
@@ -31,6 +43,11 @@ export default function AddCollectible() {
       dispatch(setNewCollectibleAddedMessage(message));
       history.push(DEFAULT_ROUTE);
       return;
+    }
+    if (contractAddressToConvertFromTokenToCollectible) {
+      await dispatch(
+        removeToken(contractAddressToConvertFromTokenToCollectible),
+      );
     }
     dispatch(setNewCollectibleAddedMessage('success'));
     history.push(DEFAULT_ROUTE);
@@ -62,6 +79,11 @@ export default function AddCollectible() {
       disabled={disabled}
       contentComponent={
         <Box padding={4}>
+          {isMainnet &&
+          !useCollectibleDetection &&
+          !collectibleDetectionNoticeDismissed ? (
+            <CollectiblesDetectionNotice />
+          ) : null}
           <Box>
             <FormField
               id="address"
@@ -69,6 +91,7 @@ export default function AddCollectible() {
               placeholder="0x..."
               value={address}
               onChange={(val) => validateAndSetAddress(val)}
+              tooltipText={t('importNFTAddressToolTip')}
               autoFocus
             />
           </Box>
@@ -81,7 +104,7 @@ export default function AddCollectible() {
               onChange={(val) => {
                 validateAndSetTokenId(val);
               }}
-              tooltipText="Each NFT has a Token ID which corresponds with a specific asset in its contract"
+              tooltipText={t('importNFTTokenIdToolTip')}
               numeric
             />
           </Box>

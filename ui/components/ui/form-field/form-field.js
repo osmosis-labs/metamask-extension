@@ -172,6 +172,10 @@ FormField.propTypes = {
    * Check if the form disabled
    */
   disabled: PropTypes.bool,
+  /**
+   * Set the placeholder text for the input field
+   */
+  placeholder: PropTypes.string,
 };
 
 FormField.defaultProps = {
